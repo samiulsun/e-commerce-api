@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiOkResponse,
@@ -10,7 +11,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../common/decorators/public.decorator';
 import { AuthService } from './auth.service';
-import { AuthTokensResponse } from './auth.types';
+import { AuthTokensEntity } from './entities/auth-tokens.entity';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SignupDto } from './dto/signup.dto';
@@ -25,10 +26,12 @@ export class AuthController {
   @Post('signup')
   @ApiOperation({ summary: 'Create an account' })
   @ApiCreatedResponse({
+    type: AuthTokensEntity,
     description: 'Account created; access + refresh tokens issued',
   })
+  @ApiBadRequestResponse({ description: 'Validation failed' })
   @ApiConflictResponse({ description: 'Email already registered' })
-  signup(@Body() dto: SignupDto): Promise<AuthTokensResponse> {
+  signup(@Body() dto: SignupDto): Promise<AuthTokensEntity> {
     return this.authService.signup(dto);
   }
 
@@ -37,9 +40,12 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Log in with email and password' })
-  @ApiOkResponse({ description: 'Access + refresh tokens' })
+  @ApiOkResponse({
+    type: AuthTokensEntity,
+    description: 'Access + refresh tokens',
+  })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
-  login(@Body() dto: LoginDto): Promise<AuthTokensResponse> {
+  login(@Body() dto: LoginDto): Promise<AuthTokensEntity> {
     return this.authService.login(dto);
   }
 
@@ -47,9 +53,12 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Rotate the refresh token' })
-  @ApiOkResponse({ description: 'A fresh access + refresh token pair' })
+  @ApiOkResponse({
+    type: AuthTokensEntity,
+    description: 'A fresh access + refresh token pair',
+  })
   @ApiUnauthorizedResponse({ description: 'Invalid or rotated-away token' })
-  refresh(@Body() dto: RefreshTokenDto): Promise<AuthTokensResponse> {
+  refresh(@Body() dto: RefreshTokenDto): Promise<AuthTokensEntity> {
     return this.authService.refresh(dto.refreshToken);
   }
 }

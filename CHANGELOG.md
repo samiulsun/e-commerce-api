@@ -3,6 +3,42 @@
 All notable changes to this project are documented here — one entry per merged
 phase, including decisions taken where the requirements left room.
 
+## [v1.0] — Phase 6: Polish
+
+### Added
+
+- Swagger coverage for every endpoint: response entity classes (User,
+  AuthTokens, Category, Product + list envelope, Cart, Order + list
+  envelope, CheckoutResponse, WebhookResult), operation summaries everywhere,
+  and documented 401/403/400/404/409 responses for the guarded routes.
+- Postman collection `postman/e-com-api.postman_collection.json` covering
+  every endpoint, with login requests that store bearer tokens as collection
+  variables.
+- Final README: quick start for both Postgres options, environment variable
+  reference, script table, testing guide, and a Stripe test-mode walkthrough
+  (test card numbers, `stripe listen` forwarding, manual triggers).
+- Prisma seed config moved from `package.json` to `prisma.config.ts` — the
+  Prisma 6 deprecation warning is gone and the config is Prisma-7-ready.
+
+### Decisions
+
+- `tsconfig.build.json` now restricts compilation to `src/`
+  (`"include": ["src/**/*"]`). Root-level Prisma config files used to widen
+  the inferred `rootDir`, emitting `dist/src/main.js` and silently breaking
+  `node dist/main` (`start:prod`); `start:dev` masked this. The built
+  artifact layout is now stable.
+- e2e PaymentIntent creation stays mock-driven (no test key exists in this
+  environment) while webhook signature verification and all event flows are
+  fully real.
+
+### Verified
+
+- Clean-checkout walkthrough (documented in the README): `npm ci` →
+  `cp .env.example .env` → migrate → seed → `npm run test` (62/62) →
+  `npm run test:e2e` (49/49) → `npm run build` → boot smoke. Compose and the
+  embedded-Postgres fallback are both documented; this machine verified the
+  embedded path.
+
 ## [v0.5] — Phase 5: Stripe Webhook
 
 ### Added

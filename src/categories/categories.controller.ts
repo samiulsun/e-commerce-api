@@ -11,6 +11,7 @@ import {
   ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -22,6 +23,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { CategoryEntity } from './entities/category.entity';
 
 @ApiTags('categories')
 @Controller('categories')
@@ -31,7 +33,10 @@ export class CategoriesController {
   @Public()
   @Get()
   @ApiOperation({ summary: 'List categories' })
-  @ApiOkResponse({ description: 'All categories ordered by name' })
+  @ApiOkResponse({
+    type: [CategoryEntity],
+    description: 'All categories ordered by name',
+  })
   findAll() {
     return this.categoriesService.findAll();
   }
@@ -39,7 +44,7 @@ export class CategoriesController {
   @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get a single category' })
-  @ApiOkResponse({ description: 'The category' })
+  @ApiOkResponse({ type: CategoryEntity, description: 'The category' })
   @ApiNotFoundResponse({ description: 'Category not found' })
   findOne(@Param('id') id: string) {
     return this.categoriesService.findOne(id);
@@ -49,8 +54,12 @@ export class CategoriesController {
   @ApiBearerAuth()
   @Post()
   @ApiOperation({ summary: 'Create a category (ADMIN)' })
-  @ApiCreatedResponse({ description: 'The created category' })
+  @ApiCreatedResponse({
+    type: CategoryEntity,
+    description: 'The created category',
+  })
   @ApiConflictResponse({ description: 'Slug already in use' })
+  @ApiForbiddenResponse({ description: 'Requires the ADMIN role' })
   create(@Body() dto: CreateCategoryDto) {
     return this.categoriesService.create(dto);
   }
@@ -59,8 +68,9 @@ export class CategoriesController {
   @ApiBearerAuth()
   @Patch(':id')
   @ApiOperation({ summary: 'Update a category (ADMIN)' })
-  @ApiOkResponse({ description: 'The updated category' })
+  @ApiOkResponse({ type: CategoryEntity, description: 'The updated category' })
   @ApiNotFoundResponse({ description: 'Category not found' })
+  @ApiForbiddenResponse({ description: 'Requires the ADMIN role' })
   update(@Param('id') id: string, @Body() dto: UpdateCategoryDto) {
     return this.categoriesService.update(id, dto);
   }
@@ -69,9 +79,10 @@ export class CategoriesController {
   @ApiBearerAuth()
   @Delete(':id')
   @ApiOperation({ summary: 'Delete an empty category (ADMIN)' })
-  @ApiOkResponse({ description: 'The deleted category' })
+  @ApiOkResponse({ type: CategoryEntity, description: 'The deleted category' })
   @ApiConflictResponse({ description: 'Category still has products' })
   @ApiNotFoundResponse({ description: 'Category not found' })
+  @ApiForbiddenResponse({ description: 'Requires the ADMIN role' })
   remove(@Param('id') id: string) {
     return this.categoriesService.remove(id);
   }
