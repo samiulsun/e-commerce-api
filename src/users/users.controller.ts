@@ -6,6 +6,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { AuthenticatedUser } from './user.select';
+import { UserEntity } from '../users/entities/user.entity';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @ApiTags('users')
@@ -14,7 +15,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 export class UsersController {
   @Get('me')
   @ApiOperation({ summary: 'Get the authenticated user' })
-  @ApiOkResponse({ description: 'The current user profile' })
+  @ApiOkResponse({ type: UserEntity, description: 'The current user profile' })
   me(@CurrentUser() user: AuthenticatedUser): AuthenticatedUser {
     return user;
   }

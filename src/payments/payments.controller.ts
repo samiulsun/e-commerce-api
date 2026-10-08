@@ -15,6 +15,7 @@ import {
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { Public } from '../common/decorators/public.decorator';
+import { WebhookResultEntity } from './entities/webhook-result.entity';
 import { PaymentsService, WebhookHandlingResult } from './payments.service';
 
 @ApiTags('payments')
@@ -33,7 +34,7 @@ export class PaymentsController {
     summary:
       'Stripe webhook endpoint (raw body + signature verified before any database work)',
   })
-  @ApiOkResponse({ description: '{ received: true, handled: boolean }' })
+  @ApiOkResponse({ type: WebhookResultEntity })
   @ApiBadRequestResponse({
     description: 'Missing or invalid Stripe signature',
   })

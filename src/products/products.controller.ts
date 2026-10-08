@@ -11,6 +11,7 @@ import {
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -22,6 +23,8 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { CreateProductDto } from './dto/create-product.dto';
 import { QueryProductsDto } from './dto/query-products.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { ProductEntity } from './entities/product.entity';
+import { ProductListEntity } from './entities/product-list.entity';
 import { PaginatedProducts, ProductsService } from './products.service';
 
 @ApiTags('products')
@@ -34,9 +37,7 @@ export class ProductsController {
   @ApiOperation({
     summary: 'List products (paginated, searchable, filterable)',
   })
-  @ApiOkResponse({
-    description: 'Paginated result: `{ data, total, skip, take }`',
-  })
+  @ApiOkResponse({ type: ProductListEntity })
   findAll(@Query() query: QueryProductsDto): Promise<PaginatedProducts> {
     return this.productsService.findAll(query);
   }
@@ -44,7 +45,10 @@ export class ProductsController {
   @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get a single product' })
-  @ApiOkResponse({ description: 'The product with its category' })
+  @ApiOkResponse({
+    type: ProductEntity,
+    description: 'The product with its category',
+  })
   @ApiNotFoundResponse({ description: 'Product not found or inactive' })
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(id);
@@ -54,7 +58,11 @@ export class ProductsController {
   @ApiBearerAuth()
   @Post()
   @ApiOperation({ summary: 'Create a product (ADMIN)' })
-  @ApiCreatedResponse({ description: 'The created product' })
+  @ApiCreatedResponse({
+    type: ProductEntity,
+    description: 'The created product',
+  })
+  @ApiForbiddenResponse({ description: 'Requires the ADMIN role' })
   create(@Body() dto: CreateProductDto) {
     return this.productsService.create(dto);
   }
@@ -63,7 +71,8 @@ export class ProductsController {
   @ApiBearerAuth()
   @Patch(':id')
   @ApiOperation({ summary: 'Update a product (ADMIN)' })
-  @ApiOkResponse({ description: 'The updated product' })
+  @ApiOkResponse({ type: ProductEntity, description: 'The updated product' })
+  @ApiForbiddenResponse({ description: 'Requires the ADMIN role' })
   @ApiNotFoundResponse({ description: 'Product not found' })
   update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
     return this.productsService.update(id, dto);
@@ -74,8 +83,10 @@ export class ProductsController {
   @Delete(':id')
   @ApiOperation({ summary: 'Soft-delete a product (ADMIN)' })
   @ApiOkResponse({
+    type: ProductEntity,
     description: 'The product with `isActive: false` — never hard-deleted',
   })
+  @ApiForbiddenResponse({ description: 'Requires the ADMIN role' })
   @ApiNotFoundResponse({ description: 'Product not found' })
   remove(@Param('id') id: string) {
     return this.productsService.softDelete(id);

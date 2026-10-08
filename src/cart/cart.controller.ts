@@ -20,6 +20,7 @@ import {
 import type { AuthenticatedUser } from '../users/user.select';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { CartResponse, CartService } from './cart.service';
+import { CartEntity } from './entities/cart.entity';
 import { AddCartItemDto } from './dto/add-cart-item.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 
@@ -31,7 +32,10 @@ export class CartController {
 
   @Get()
   @ApiOperation({ summary: "Get the caller's cart (created lazily)" })
-  @ApiOkResponse({ description: 'The cart with line totals and subtotal' })
+  @ApiOkResponse({
+    type: CartEntity,
+    description: 'The cart with line totals and subtotal',
+  })
   getCart(@CurrentUser() user: AuthenticatedUser): Promise<CartResponse> {
     return this.cartService.getCart(user.id);
   }
@@ -39,7 +43,7 @@ export class CartController {
   @Post('items')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Add a product (increments an existing line item)' })
-  @ApiOkResponse({ description: 'The updated cart' })
+  @ApiOkResponse({ type: CartEntity, description: 'The updated cart' })
   @ApiBadRequestResponse({ description: 'Quantity exceeds available stock' })
   @ApiNotFoundResponse({ description: 'Product not found or inactive' })
   addItem(
@@ -51,7 +55,7 @@ export class CartController {
 
   @Patch('items/:id')
   @ApiOperation({ summary: 'Set the quantity of a cart line item' })
-  @ApiOkResponse({ description: 'The updated cart' })
+  @ApiOkResponse({ type: CartEntity, description: 'The updated cart' })
   @ApiBadRequestResponse({ description: 'Quantity exceeds available stock' })
   @ApiNotFoundResponse({ description: 'Cart item not found' })
   updateItem(
@@ -64,7 +68,7 @@ export class CartController {
 
   @Delete('items/:id')
   @ApiOperation({ summary: 'Remove a line item' })
-  @ApiOkResponse({ description: 'The updated cart' })
+  @ApiOkResponse({ type: CartEntity, description: 'The updated cart' })
   @ApiNotFoundResponse({ description: 'Cart item not found' })
   removeItem(
     @CurrentUser() user: AuthenticatedUser,
@@ -75,7 +79,7 @@ export class CartController {
 
   @Delete()
   @ApiOperation({ summary: 'Clear the cart' })
-  @ApiOkResponse({ description: 'The emptied cart' })
+  @ApiOkResponse({ type: CartEntity, description: 'The emptied cart' })
   clearCart(@CurrentUser() user: AuthenticatedUser): Promise<CartResponse> {
     return this.cartService.clearCart(user.id);
   }

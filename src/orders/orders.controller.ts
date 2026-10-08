@@ -9,6 +9,7 @@ import {
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../users/user.select';
 import { QueryOrdersDto } from './dto/query-orders.dto';
+import { OrderEntity, OrderListEntity } from './entities/order.entity';
 import {
   OrderWithDetails,
   OrdersService,
@@ -23,9 +24,7 @@ export class OrdersController {
 
   @Get()
   @ApiOperation({ summary: "List the caller's orders" })
-  @ApiOkResponse({
-    description: 'Paginated result: `{ data, total, skip, take }`',
-  })
+  @ApiOkResponse({ type: OrderListEntity })
   findAll(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: QueryOrdersDto,
@@ -36,6 +35,7 @@ export class OrdersController {
   @Get(':id')
   @ApiOperation({ summary: "Get one of the caller's orders" })
   @ApiOkResponse({
+    type: OrderEntity,
     description: 'The order with item snapshots and payment state',
   })
   @ApiNotFoundResponse({ description: 'Order not found for this user' })
