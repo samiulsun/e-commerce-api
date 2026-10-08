@@ -3,6 +3,45 @@
 All notable changes to this project are documented here — one entry per merged
 phase, including decisions taken where the requirements left room.
 
+## [v0.4] — Phase 4: Checkout & Orders
+
+### Added
+
+- `POST /checkout` — reads the caller's stored cart server-side (the client
+  sends nothing: no cart, no total, no prices). Validates every line's stock
+  and active state, creates a `PENDING` Order with OrderItems that snapshot
+  `priceAtPurchaseCents`, opens a Stripe PaymentIntent for the total in cents
+  and stores a `PENDING` Payment row. Returns
+  `{ orderId, clientSecret, amountCents, currency }`.
+- `GET /orders` (paginated `{ data, total, skip, take }`) and
+  `GET /orders/:id` — strictly caller-scoped; other users' order ids 404.
+- `StripeService` — injectable wrapper around PaymentIntents and (for Phase 5)
+  webhook signature verification; no-ops to a clear 503 when unconfigured.
+- Unit tests (9) for checkout validation and failure handling; e2e suite (7)
+  for the checkout flow, price snapshots, ownership and validation errors.
+
+### Decisions
+
+- `POST /checkout` responds 201 (an Order resource is created).
+- If PaymentIntent creation fails, or returns no client secret, the order is
+  marked `FAILED` and the caller receives 502 — no orphaned PENDING order is
+  left without a payment trail.
+- The Payment row is created at checkout (`PENDING`) so every PaymentIntent is
+  tracked before the webhook arrives; the webhook updates it in Phase 5.
+- The cart is deliberately **not** cleared at checkout — clearing is a
+  webhook-transaction side effect on payment success (Phase 5).
+- Stripe idempotency keys are per order (`checkout-<orderId>`).
+- No Stripe test key exists in this environment, so the e2e overrides
+  `StripeService` with a deterministic mock. The production path is identical
+  once `STRIPE_SECRET_KEY` is set — no code change required.
+- Order history keeps the price snapshot forever: changing a live price (or
+  deactivating a product) never alters past orders.
+
+### Verified
+
+- `npm run test` — 50/50 pass; `npm run test:e2e` — 43/43 pass; build and
+  lint clean.
+
 ## [v0.3] — Phase 3: Cart
 
 ### Added
