@@ -7,10 +7,11 @@ import type { AuthenticatedUser } from '../../users/user.select';
  * authenticated routes (the global JwtAuthGuard rejects the rest).
  */
 export const CurrentUser = createParamDecorator(
-  (_data: unknown, ctx: ExecutionContext): AuthenticatedUser | undefined => {
+  (_data: unknown, ctx: ExecutionContext): AuthenticatedUser => {
     const request = ctx
       .switchToHttp()
       .getRequest<Request & { user?: AuthenticatedUser }>();
-    return request.user;
+    // The global JwtAuthGuard guarantees a user on every non-public route.
+    return request.user as AuthenticatedUser;
   },
 );
