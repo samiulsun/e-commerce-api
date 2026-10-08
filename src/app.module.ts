@@ -11,6 +11,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { validateEnv } from './config/env.validation';
 import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { UsersModule } from './users/users.module';
@@ -32,6 +33,7 @@ import { UsersModule } from './users/users.module';
     CategoriesModule,
     CartModule,
     OrdersModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -3,7 +3,9 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  // rawBody: true preserves the exact webhook payload bytes for Stripe
+  // signature verification.
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('E-Commerce API')
