@@ -3,6 +3,41 @@
 All notable changes to this project are documented here — one entry per merged
 phase, including decisions taken where the requirements left room.
 
+## [v0.1] — Phase 1: Auth
+
+### Added
+
+- `POST /auth/signup` (bcrypt cost 12, role `USER`), `POST /auth/login` and
+  `POST /auth/refresh` with refresh-token rotation. Access JWT ~15 min,
+  refresh JWT 7 days.
+- `JwtStrategy` + global `JwtAuthGuard` (routes opt out with `@Public()`),
+  global `RolesGuard` + `@Roles(...)` decorator.
+- `GET /users/me` protected route returning the safe user projection.
+- Rate limiting via `@nestjs/throttler`: global 100 req/min; 5 req/min on
+  `/auth/signup` and `/auth/login`.
+- `userSafeSelect` Prisma projection — `passwordHash` can never leave the API.
+- Unit tests for `AuthService` (10 cases) and an auth e2e flow (8 cases),
+  including rotated-token reuse rejection and the standard error shape.
+
+### Decisions
+
+- Refresh tokens are stored as SHA-256 digests rather than bcrypt: bcrypt
+  truncates input at 72 bytes, so two rotated JWTs sharing a prefix would be
+  indistinguishable. A digest mismatch clears the stored session.
+- Login answers 401 `"Invalid email or password"` for both unknown emails and
+  wrong passwords (no account enumeration).
+- One private `issueTokens` helper means signup/login/refresh all persist the
+  new refresh digest atomically with issuance.
+- `@nestjs/jwt` pinned to 11.x and `@nestjs/passport` to 11.x (the 12.x lines
+  are ESM-only and incompatible with Jest's CJS runtime on Node 22).
+- Global `ValidationPipe` runs with `transform: true` so DTO/query coercion
+  applies consistently.
+
+### Verified
+
+- `npm run test` — 11/11 pass; `npm run test:e2e` — 10/10 pass (schema reset
+  of `ecom_test` exercised); `npm run build` and `npm run lint` clean.
+
 ## [v0.0] — Phase 0: Scaffold
 
 ### Added
