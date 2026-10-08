@@ -3,6 +3,41 @@
 All notable changes to this project are documented here — one entry per merged
 phase, including decisions taken where the requirements left room.
 
+## [v0.3] — Phase 3: Cart
+
+### Added
+
+- `GET /cart` — created lazily per user (atomic upsert, so concurrent first
+  requests cannot race the unique constraint) returning
+  `{ id, items, subtotalCents, itemCount }` with per-line `lineTotalCents`.
+- `POST /cart/items` — atomic upsert: increments an existing line
+  (never duplicates it) inside a transaction. A resulting quantity above
+  stock throws 400 and rolls the increment back — never silently clamps.
+- `PATCH /cart/items/:id`, `DELETE /cart/items/:id`, `DELETE /cart` — all
+  ownership-scoped.
+- Unit tests (12) for get/add/update/remove/clear, stock rejection and
+  ownership enforcement; e2e suite (10) covering add -> increment ->
+  over-stock rollback -> update -> cross-user isolation -> remove -> clear.
+
+### Decisions
+
+- `POST /cart/items` responds 200, not 201: it upserts the cart view rather
+  than creating a distinct resource.
+- Stock rejections return 400 with attempted and available quantities, e.g.
+  `"Requested quantity 4 exceeds available stock 3"`.
+- Foreign cart items answer 404 (never 403) so item ids of other users are
+  not probeable.
+- Cart stock checks are advisory — they run again at checkout; the
+  authoritative stock decrement lives only in the payment webhook
+  transaction (Phase 5).
+- `@CurrentUser()` now returns a definite `AuthenticatedUser`; the global
+  JWT guard guarantees presence on every protected route.
+
+### Verified
+
+- `npm run test` — 41/41 pass; `npm run test:e2e` — 36/36 pass; build and
+  lint clean.
+
 ## [v0.2] — Phase 2: Products & Categories
 
 ### Added
