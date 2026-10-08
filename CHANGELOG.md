@@ -3,6 +3,47 @@
 All notable changes to this project are documented here — one entry per merged
 phase, including decisions taken where the requirements left room.
 
+## [v0.5] — Phase 5: Stripe Webhook
+
+### Added
+
+- `POST /payments/webhook` — raw request body preserved (`rawBody: true`) and
+  verified via `stripe.webhooks.constructEvent` against
+  `STRIPE_WEBHOOK_SECRET`; missing or tampered signatures answer 400 before
+  any database work. Unknown event types are acknowledged and ignored.
+- `payment_intent.succeeded` — one Prisma `$transaction`: order -> `PAID`,
+  `Product.stock` decremented with an atomic `stock >= quantity` guard (the
+  **only** place stock ever decreases), the user's cart cleared, Payment row
+  -> `SUCCEEDED`.
+- `payment_intent.payment_failed` — order `PENDING` -> `FAILED`, Payment row
+  -> `FAILED`; stock and cart untouched.
+- Unit tests (12) including the required concurrency scenario (two webhooks
+  racing for the last unit: exactly one wins, stock never goes below zero)
+  and idempotent re-delivery. E2E (6) generates real Stripe signatures and
+  includes a parallel webhook race against real Postgres plus bad-signature
+  400s.
+
+### Decisions
+
+- Re-delivered success events are idempotent: if the order is already `PAID` the
+  payment status is re-recorded but stock/cart are left alone.
+- Success events for unknown PaymentIntents are acknowledged (`handled: false`)
+  — Stripe retries must not drown us in errors for foreign PIs.
+- A success event arriving after a `FAILED` order still pays it (Stripe retries
+  of the same PI can succeed later); a failed event never downgrades a paid
+  order (`status: PENDING` guard on the transition).
+- If the stock guard fails mid-success-transaction, everything rolls back and
+  the endpoint answers 409; the order remains `PENDING` for manual
+  reconciliation (auto-refund is out of scope).
+- E2E signs payloads with Stripe's own `generateTestHeaderString`, so
+  signature verification, raw-body handling and 400 paths are exercised
+  end-to-end with no network calls.
+
+### Verified
+
+- `npm run test` — 62/62 pass; `npm run test:e2e` — 49/49 pass (incl. the
+  concurrent last-unit webhook race); build and lint clean.
+
 ## [v0.4] — Phase 4: Checkout & Orders
 
 ### Added
