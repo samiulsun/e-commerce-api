@@ -3,6 +3,44 @@
 All notable changes to this project are documented here — one entry per merged
 phase, including decisions taken where the requirements left room.
 
+## [v0.2] — Phase 2: Products & Categories
+
+### Added
+
+- `GET /products` — public: `skip`/`take` pagination (`take` capped at 100,
+  default 20), `q` ILIKE search over name/description/sku, `categoryId`,
+  `minPrice`/`maxPrice` (integer cents) filters. Returns
+  `{ data, total, skip, take }` with each product's category.
+- `GET /products/:id` — public; 404 for missing or soft-deleted products.
+- `POST /products` and `PATCH /products/:id` (ADMIN); unknown `categoryId`
+  -> 404, duplicate `sku` -> 409.
+- `DELETE /products/:id` (ADMIN) — soft delete only (`isActive = false`),
+  because OrderItem rows must keep referencing the product.
+- Categories CRUD: public reads; ADMIN writes; deleting a category that still
+  has products returns 409.
+- Unit tests: `ProductsService` (11 cases: pagination/search/filter/CRUD/
+  soft-delete) and `CategoriesService` (7 cases). E2E suite (16 cases)
+  covering the 401/403 role gates, validation, soft-delete hiding and
+  duplicate conflicts.
+
+### Decisions
+
+- List responses use the `{ data, total, skip, take }` envelope — products
+  first, to be reused by orders in later phases.
+- `q` matches name, description and sku with case-insensitive `contains`
+  (Postgres ILIKE through Prisma `mode: 'insensitive'`).
+- `PATCH /products/:id` can update inactive products (admins can edit or
+  reactivate); public reads still hide them.
+- Category deletion is hard but guarded with a 409 pre-check, matching the
+  database FK restriction with a clearer message.
+- Public product routes are marked `@Public()` explicitly; everything else
+  stays behind the global JWT guard.
+
+### Verified
+
+- `npm run test` — 29/29 pass; `npm run test:e2e` — 26/26 pass; build and
+  lint clean.
+
 ## [v0.1] — Phase 1: Auth
 
 ### Added
